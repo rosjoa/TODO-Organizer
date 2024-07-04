@@ -29,7 +29,7 @@ class ToolWindowFactory : ToolWindowFactory {
     class MyToolWindow(toolWindow: ToolWindow) {
 
         private val project = toolWindow.project
-        private var allTodoSet : Set<PsiCommentWrapper> = mutableSetOf()
+        private var todoSet : Set<PsiCommentWrapper> = mutableSetOf()
 
         fun getContent() = JBPanel<JBPanel<*>>().apply {
             val psiManager : PsiManager = PsiManager.getInstance(project)
@@ -39,14 +39,15 @@ class ToolWindowFactory : ToolWindowFactory {
                 processDirectory(psiDirectory)
             }
 
-            val jbList = JBList(allTodoSet)
-
+            val jbList = JBList(todoSet)
 
             jbList.addListSelectionListener {
                 val selectedValue = jbList.selectedValue
                 if (selectedValue != null) {
-                    FileEditorManager.getInstance(project).openFile(selectedValue.psiComment.containingFile.virtualFile, true)
-                    val doc = PsiDocumentManager.getInstance(project).getDocument(selectedValue.psiComment.containingFile)
+                    FileEditorManager.getInstance(project)
+                        .openFile(selectedValue.psiComment.containingFile.virtualFile, true)
+                    val doc =
+                        PsiDocumentManager.getInstance(project).getDocument(selectedValue.psiComment.containingFile)
                     if (doc != null) {
                         WriteCommandAction.runWriteCommandAction(project) {
                             val editor = EditorFactory.getInstance().editors(doc).findFirst().orElse(null)
@@ -66,8 +67,9 @@ class ToolWindowFactory : ToolWindowFactory {
         private fun processDirectory(psiDirectory : PsiDirectory) {
             for (file in psiDirectory.files) {
                 val comments = PsiTreeUtil.collectElementsOfType(file, PsiComment::class.java)
-                    .filter { psiComment ->  psiComment.text.contains("TODO")}.map { psiComment ->  PsiCommentWrapper(psiComment)}
-                allTodoSet = allTodoSet.plus(comments)
+                    .filter { psiComment -> psiComment.text.contains("TODO") }
+                    .map { psiComment -> PsiCommentWrapper(psiComment) }
+                todoSet = todoSet.plus(comments)
             }
 
             for (subDir in psiDirectory.subdirectories)
